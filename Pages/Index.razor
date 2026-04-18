@@ -1,0 +1,243 @@
+@page "/"
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject HttpClient Http
+
+<PageTitle>Try C# by Pac-Dessert1436</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <p class="lead mb-0">Compile and run C# code directly in your browser. <i>A homage to Microsoft's
+                <a href="https://github.com/dotnet/try">Try .NET</a> tool.</i>
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">C# Code Editor</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="editor" style="height: 400px; width: 100%;"></div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary me-2" @onclick="RunCode" disabled="@isRunning">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: @(isRunning ? "inline-block" : "none");"></span>
+                        @(isRunning ? "Running..." : "Run Code")
+                    </button>
+                    <button class="btn btn-outline-secondary me-2" @onclick="ResetCode">Reset to Default Scaffold</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card mb-3" style="background-color: #e3f2fd; border-color: #b8d4fe;">
+                <div class="card-header" style="background-color: #c7e9ff; border-color: #b8d4fe;">
+                    <h5 class="card-title mb-0">Features</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Compile C# code using Roslyn on the server</li>
+                        <li>Execute code and see results instantly</li>
+                        <li>Syntax highlighting with Monaco Editor</li>
+                        <li>Built-in examples to get started</li>
+                        <li>Support for multiple C# features</li>
+                        <li>Responsive design for mobile and desktop</li>
+                        <li><b>Output shown at the page bottom</b></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card mb-3 d-0" style="background-color: #a0eea0; border-color: #b8d4fe;">
+                <div class="card-header" style="background-color: #4edda7; border-color: #b8d4fe;">
+                    <h5 class="card-title mb-0">Examples</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li><a class="dropdown-item" id="example1" 
+                            @onclick="LoadHelloWorldExample" onmouseover="mouseHover(1)" 
+                            onmouseout="mouseLeave(1)" style="cursor: pointer;">Hello World</a></li>
+                        <li><a class="dropdown-item" id="example2"
+                            @onclick="LoadFibonacciExample" onmouseover="mouseHover(2)"
+                            onmouseout="mouseLeave(2)" style="cursor: pointer;">Fibonacci</a></li>
+                        <li><a class="dropdown-item" id="example3"
+                            @onclick="LoadLinqExample" onmouseover="mouseHover(3)"
+                            onmouseout="mouseLeave(3)" style="cursor: pointer;">LINQ Example</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function mouseHover(id) {
+            dropdownItem = document.getElementById(`example${id}`);
+            dropdownItem.style.color = "white";
+        }
+        function mouseLeave(id) {
+            dropdownItem = document.getElementById(`example${id}`);
+            dropdownItem.style.color = "black";
+        }
+    </script>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Output</h5>
+                </div>
+                <div class="card-body">
+                    <div id="output" class="output-area">
+                        @if (output == null)
+                        {
+                            <span class="text-muted">Output will appear here...</span>
+                        }
+                        else
+                        {
+                            @output
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string code = DefaultScaffoldCode;
+    private string? output = null;
+    private bool isRunning = false;
+    private DotNetObjectReference<Index>? objRef;
+
+    private static string DefaultScaffoldCode
+    {
+        get => @"using System;
+
+Console.WriteLine(""Hello, C#!"");
+Console.WriteLine(""Welcome to Try C#!"");
+
+// Try some calculations
+int a = 10;
+int b = 20;
+Console.WriteLine($""{a} + {b} = {a + b}"");
+
+// Simple loop example
+for (int i = 1; i <= 3; i++)
+{
+    Console.WriteLine($""Iteration {i}"");
+}";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("initializeMonacoEditor", objRef, code);
+        }
+    }
+
+    [JSInvokable]
+    public void UpdateCode(string newCode)
+    {
+        code = newCode;
+        StateHasChanged();
+    }
+
+    private async Task RunCode()
+    {
+        isRunning = true;
+        output = "Running code...\n";
+        StateHasChanged();
+
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsJsonAsync("api/code/run", new { Code = code });
+            CodeExecResult? result = await response.Content.ReadFromJsonAsync<CodeExecResult>();
+            
+            if (result != null)
+            {
+                output = result.Output;
+            }
+            else
+            {
+                output = "Error: No response from server";
+            }
+        }
+        catch (Exception ex)
+        {
+            output = $"Error: {ex.Message}\n{ex.StackTrace}";
+        }
+        finally
+        {
+            isRunning = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ResetCode()
+    {
+        code = DefaultScaffoldCode;
+        output = null;
+        await JSRuntime.InvokeVoidAsync("setEditorContent", code);
+        StateHasChanged();
+    }
+
+    private readonly Dictionary<string, string> examples = new()
+    {
+        ["Hello World"] = @"using System;
+        
+Console.WriteLine(""Hello, World!"");",
+        ["Fibonacci"] = @"using System;
+        
+// Fibonacci sequence
+int n = 10;
+int a = 0, b = 1;
+Console.WriteLine(""Fibonacci sequence:"");
+for (int i = 0; i < n; i++)
+{
+    Console.Write($""{a} "");
+    int temp = a;
+    a = b;
+    b = temp + b;
+}",
+        ["LINQ Example"] = @"using System;
+using System.Linq;
+
+var numbers = Enumerable.Range(1, 10);
+var evenSquares = from num in numbers where num % 2 == 0 select num * num;
+
+Console.WriteLine(""Even squares:"");
+foreach (var num in evenSquares)
+    Console.WriteLine($"" {num}"");"
+    };
+
+    private async Task LoadExample(string exampleName)
+    {
+        if (examples.TryGetValue(exampleName, out string? exampleCode))
+        {
+            code = exampleCode;
+            await JSRuntime.InvokeVoidAsync("setEditorContent", code);
+            output = null;
+            StateHasChanged();
+        }
+    }
+
+    public async Task LoadHelloWorldExample() => await LoadExample("Hello World");
+    public async Task LoadFibonacciExample() => await LoadExample("Fibonacci");
+    public async Task LoadLinqExample() => await LoadExample("LINQ Example");
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
+
+    public sealed class CodeExecResult
+    {
+        public bool Success { get; set; }
+        public string Output { get; set; } = string.Empty;
+    }
+}
