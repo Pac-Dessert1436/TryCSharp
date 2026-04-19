@@ -2,9 +2,11 @@
 
 A web application served as a homage to Microsoft's [Try .NET](https://github.com/dotnet/try), allowing users to compile and run C# code directly in their browser, powered by Roslyn compiler services running on the server.
 
-The application can be deployed to any hosting provider that supports .NET 10.0. Once deployed, users can access it through their browser to compile and run C# code instantly.
+The application is now feature-complete, and can be deployed to any hosting provider that supports .NET 10.0. Once deployed, users can access it through their browser to compile and run C# code instantly.
 
-> __Note:__ This is a full-stack app and cannot be deployed to GitHub Pages. Cost-effective approaches remains to be discovered for this deployment.
+> __Note:__ This is a full-stack app and cannot be deployed to GitHub Pages. _Cost-effective deployment approaches are yet to be determined._
+
+![](screenshot.png)
 
 ## Features
 
