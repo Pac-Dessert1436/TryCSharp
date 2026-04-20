@@ -1,10 +1,8 @@
-# Try C# - Compile and Run C# Code in Browser
+# Try C# - Compile and Run C# Code in the Browser
 
-A web application served as a homage to Microsoft's [Try .NET](https://github.com/dotnet/try), allowing users to compile and run C# code directly in their browser, powered by Roslyn compiler services running on the server.
+A web application created as a tribute to Microsoft's [Try .NET](https://github.com/dotnet/try). It lets you write, compile, and run C# code directly in your browser, with Roslyn compiler services handling the heavy lifting on the server.
 
-The application is now feature-complete, and can be deployed to any hosting provider that supports .NET 10.0. Once deployed, users can access it through their browser to compile and run C# code instantly.
-
-> __Note:__ This is a full-stack app and cannot be deployed to GitHub Pages. _Cost-effective deployment approaches are yet to be determined._
+The application is now fully feature-complete and will be hosted on a platform that supports .NET 8.0, ensuring backward compatibility. **The final public URL is still to be confirmed, so keep an eye on this repo for updates!**
 
 ![](screenshot.png)
 
@@ -21,7 +19,7 @@ The application is now feature-complete, and can be deployed to any hosting prov
 
 ### Prerequisites
 
-- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or higher
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or higher
 - Git (or Portable Git) for version control
 
 ### Local Development
@@ -68,7 +66,7 @@ The application includes three rudimentary C# examples:
 
 ## Technology Stack
 
-- **.NET 10.0**: Latest .NET framework
+- **.NET 8.0**: Latest .NET framework
 - **Blazor Server**: Server-side web framework with SignalR
 - **Roslyn Compiler**: C# compilation services
 - **Monaco Editor**: VS Code's editor component
