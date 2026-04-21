@@ -11,17 +11,18 @@ builder.Services.AddCors(options =>
     });
 });
 
-// TODO: Replace this with actual API URL when deploying
-const string ApiBaseUrl = "http://localhost:5001/api/xxx";
-builder.Services.AddHttpClient("TryCSharp", client =>
+// Configure HttpClient with the application's base URL
+builder.Services.AddHttpClient("LocalApi", client =>
 {
-    client.BaseAddress = new Uri(ApiBaseUrl);
+    // Use HTTP to match the server configuration (http://*:5001)
+    client.BaseAddress = new Uri("http://localhost:5001");
 });
 
+// Register a scoped HttpClient that uses the named client
 builder.Services.AddScoped(sp => 
 {
     var factory = sp.GetRequiredService<IHttpClientFactory>();
-    return factory.CreateClient("TryCSharp");
+    return factory.CreateClient("LocalApi");
 });
 
 var app = builder.Build();
