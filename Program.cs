@@ -11,20 +11,11 @@ builder.Services.AddCors(options =>
     });
 });
 
+// TODO: Replace this with actual API URL when deploying
+const string ApiBaseUrl = "http://localhost:5001/api/xxx";
 builder.Services.AddHttpClient("TryCSharp", client =>
 {
-    var baseUrl = builder.Configuration["BaseUrl"];
-    if (string.IsNullOrEmpty(baseUrl))
-    {
-        var serverHost = builder.Configuration["ServerHost"] ?? "0.0.0.0";
-        var serverPort = builder.Configuration["ServerPort"] ?? "5001";
-        var serverUrl = $"http://{serverHost}:{serverPort}";
-        client.BaseAddress = new Uri(serverUrl);
-    }
-    else
-    {
-        client.BaseAddress = new Uri(baseUrl);
-    }
+    client.BaseAddress = new Uri(ApiBaseUrl);
 });
 
 builder.Services.AddScoped(sp => 
@@ -52,7 +43,5 @@ app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
-var serverHost = builder.Configuration["ServerHost"] ?? "0.0.0.0";
-var serverPort = builder.Configuration["ServerPort"] ?? "5001";
-var serverUrl = $"http://{serverHost}:{serverPort}";
-app.Run(serverUrl);
+// Configure the application to listen on port 5001
+app.Run($"http://*:5001");
