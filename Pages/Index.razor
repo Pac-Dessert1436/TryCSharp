@@ -111,6 +111,7 @@
     private string? output = null;
     private bool isRunning = false;
     private DotNetObjectReference<Index>? objRef;
+    private List<string> inputs = new List<string>();
 
     private static string DefaultScaffoldCode
     {
@@ -149,27 +150,52 @@ for (int i = 1; i <= 3; i++)
 
     private async Task RunCode()
     {
+        // Clear inputs for new code execution
+        inputs.Clear();
         isRunning = true;
         output = "Running code...\n";
         StateHasChanged();
+        await ExecuteCode();
+    }
 
+    private async Task ExecuteCode()
+    {
         try
         {
-            HttpResponseMessage response = await Http.PostAsJsonAsync("api/code/run", new { Code = code });
+            HttpResponseMessage response = await Http.PostAsJsonAsync("api/code/run", new { Code = code, Inputs = inputs });
             CodeExecResult? result = await response.Content.ReadFromJsonAsync<CodeExecResult>();
             
             if (result != null)
             {
-                output = result.Output;
+                if (result.RequiresInput && result.InputPrompt != null)
+                {
+                    // Prompt user for input
+                    string userInput = await JSRuntime.InvokeAsync<string>("prompt", result.InputPrompt);
+                    if (userInput != null)
+                    {
+                        inputs.Add(userInput);
+                        // Continue execution with the new input
+                        await ExecuteCode();
+                        return;
+                    }
+                    else
+                    {
+                        output = "/* Execution cancelled by user */";
+                    }
+                }
+                else
+                {
+                    output = result.Output;
+                }
             }
             else
             {
-                output = "Error: No response from server";
+                output = "/* Error: No response from server */";
             }
         }
         catch (Exception ex)
         {
-            output = $"Error: {ex.Message}\n{ex.StackTrace}";
+            output = $"[!] Error: {ex.Message}\n{ex.StackTrace}";
         }
         finally
         {
@@ -239,5 +265,7 @@ foreach (var num in evenSquares)
     {
         public bool Success { get; set; }
         public string Output { get; set; } = string.Empty;
+        public bool RequiresInput { get; set; } = false;
+        public string? InputPrompt { get; set; } = null;
     }
 }

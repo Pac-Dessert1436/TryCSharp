@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Components.Web;
-using TryCSharp;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
@@ -16,7 +13,18 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddHttpClient("TryCSharp", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["BaseUrl"] ?? "http://localhost:5141");
+    var baseUrl = builder.Configuration["BaseUrl"];
+    if (string.IsNullOrEmpty(baseUrl))
+    {
+        var serverHost = builder.Configuration["ServerHost"] ?? "0.0.0.0";
+        var serverPort = builder.Configuration["ServerPort"] ?? "5001";
+        var serverUrl = $"http://{serverHost}:{serverPort}";
+        client.BaseAddress = new Uri(serverUrl);
+    }
+    else
+    {
+        client.BaseAddress = new Uri(baseUrl);
+    }
 });
 
 builder.Services.AddScoped(sp => 
@@ -44,4 +52,7 @@ app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
-app.Run();
+var serverHost = builder.Configuration["ServerHost"] ?? "0.0.0.0";
+var serverPort = builder.Configuration["ServerPort"] ?? "5001";
+var serverUrl = $"http://{serverHost}:{serverPort}";
+app.Run(serverUrl);
