@@ -47,19 +47,23 @@
         } else {
             console.error('Monaco Editor not available after timeout');
             
-            // Fallback: create a simple text area if Monaco fails
+            // Show popup message instead of textarea fallback
             const editorElement = document.getElementById('editor');
             if (editorElement) {
                 editorElement.innerHTML = `
-                    <textarea style="width: 100%; height: 100%; border: none; padding: 10px; font-family: monospace; font-size: 14px; resize: none;" 
-                              oninput="window.updateCodeFromFallback(this.value)">
-                        ${initialCode}
-                    </textarea>
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 8px;">
+                        <div style="text-align: center; padding: 20px; max-width: 400px;">
+                            <h4 style="color: #dc3545; margin-bottom: 15px;">⚠️ Monaco Editor Not Available</h4>
+                            <p style="color: #6c757d; margin-bottom: 20px;">
+                                The Monaco Editor failed to load. Please refresh the page to try again.
+                            </p>
+                            <button onclick="location.reload()" style="background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
+                                Refresh Page
+                            </button>
+                        </div>
+                    </div>
                 `;
-                window.updateCodeFromFallback = (code) => {
-                    dotNetHelper.invokeMethodAsync('UpdateCode', code);
-                };
-                console.log('Fallback text area created');
+                console.log('Monaco Editor popup message displayed');
             }
         }
     };
@@ -74,10 +78,7 @@ window.setEditorContent = (code) => {
         // Editor not yet initialized but Monaco is loaded
         setTimeout(() => window.setEditorContent(code), 100);
     } else {
-        // Fallback for text area
-        const textarea = document.querySelector('#editor textarea');
-        if (textarea) {
-            textarea.value = code;
-        }
+        // No action needed for popup scenario - user needs to refresh
+        console.log('Monaco Editor not available; page refresh required');
     }
 };

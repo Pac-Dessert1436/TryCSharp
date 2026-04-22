@@ -2,7 +2,9 @@
 
 A web application created as a tribute to Microsoft's [Try .NET](https://github.com/dotnet/try). It lets you write, compile, and run C# code directly in your browser, with Roslyn compiler services handling the heavy lifting on the server.
 
-The application is now fully feature-complete and will be hosted on a platform that supports .NET 8.0, ensuring backward compatibility. **The final public URL is still to be confirmed, so keep an eye on this repo for updates!**
+The application is now **feature-complete and production-ready**! It is hosted on a platform/server that supports .NET 8.0, ensuring backward compatibility.
+
+**🌐 Live Website: https://trycsharp.pac-dessert1436.net/**
 
 ![](screenshot.png)
 
