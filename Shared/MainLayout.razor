@@ -1,11 +1,23 @@
 @inherits LayoutComponentBase
 
 <div class="container-fluid">
-    <div class="top-row px-4 py-3">
-        <h1 class="mb-0">{<b>Try C#</b>} Compile and Run C# Code Online</h1>
-        <a href="https://github.com/Pac-Dessert1436/TryCSharp" target="_blank" class="btn btn-link">
-            See GitHub Repository
-        </a>
+    <div class="top-row px-4 py-3 d-flex justify-content-between align-items-center">
+        <h1 class="mb-0 title-with-logo">
+            <span class="logo-part">{</span>
+            <b data-translate="AppName" class="logo-part">Try C#</b>
+            <span class="logo-part">}</span>
+            &nbsp;<span data-translate="AppSubtitle">Compile and Run C# Code Online</span>
+        </h1>
+        <div class="d-flex align-items-center gap-3">
+            <div class="language-selector">
+                <label for="cultureSelect" class="me-2" data-translate="LanguageSwitcherLabel">Language:</label>
+                <select id="cultureSelect" class="form-select form-select-sm d-inline-block w-auto" onchange="window.switchLanguage(this.value)">
+                    <option value="en" selected>English</option>
+                    <option value="zh-CN">中文</option>
+                </select>
+            </div>
+            <a href="https://github.com/Pac-Dessert1436/TryCSharp" target="_blank" class="btn btn-link" data-translate="GitHubLinkText">See GitHub Repository</a>
+        </div>
     </div>
 
     <article class="content px-4">

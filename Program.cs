@@ -43,6 +43,4 @@ app.MapRazorPages();
 app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
-
-// Configure the application to listen on port 5001
-app.Run($"http://*:5001");
+app.Run();

@@ -9,8 +9,9 @@
 <div class="container-fluid">
     <div class="row mb-3">
         <div class="col-12">
-            <p class="lead mb-0">Compile and run C# code directly in your browser. <i>A homage to Microsoft's
-                <a href="https://github.com/dotnet/try">Try .NET</a> tool.</i>
+            <p class="lead mb-0">
+                <span data-translate="DescriptionFirst">Compile and run C# code directly in your browser. A homage to Microsoft's</span>
+                <a href="https://github.com/dotnet/try">Try .NET</a><span data-translate="DescriptionSecond">&nbsp;tool.</span>
             </p>
         </div>
     </div>
@@ -19,7 +20,7 @@
         <div class="col-lg-8">
             <div class="card mb-3">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">C# Code Editor</h5>
+                    <h5 class="card-title mb-0" data-translate="CardTitleCodeEditor">C# Code Editor</h5>
                 </div>
                 <div class="card-body p-0">
                     <div id="editor" style="height: 400px; width: 100%;"></div>
@@ -27,9 +28,9 @@
                 <div class="card-footer">
                     <button class="btn btn-primary me-2" @onclick="RunCode" disabled="@isRunning">
                         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: @(isRunning ? "inline-block" : "none");"></span>
-                        @(isRunning ? "Running..." : "Run Code")
+                        <span data-translate="ButtonRunCode">Run Code</span>
                     </button>
-                    <button class="btn btn-outline-secondary me-2" @onclick="ResetCode">Reset to Default Scaffold</button>
+                    <button class="btn btn-outline-secondary me-2" @onclick="ResetCode" data-translate="ButtonReset">Reset to Default Scaffold</button>
                 </div>
             </div>
         </div>
@@ -37,35 +38,35 @@
         <div class="col-lg-4">
             <div class="card mb-3" style="background-color: #e3f2fd; border-color: #b8d4fe;">
                 <div class="card-header" style="background-color: #c7e9ff; border-color: #b8d4fe;">
-                    <h5 class="card-title mb-0">Features</h5>
+                    <h5 class="card-title mb-0" data-translate="CardTitleFeatures">Features</h5>
                 </div>
                 <div class="card-body">
                     <ul class="mb-0">
-                        <li>Compile C# code using Roslyn on the server</li>
-                        <li>Execute code and see results instantly</li>
-                        <li>Syntax highlighting with Monaco Editor</li>
-                        <li>Built-in examples to get started</li>
-                        <li>Support for multiple C# features</li>
-                        <li>Responsive design for mobile and desktop</li>
-                        <li><b>Output shown at the page bottom</b></li>
+                        <li data-translate="Feature1">Compile C# code using Roslyn on the server</li>
+                        <li data-translate="Feature2">Execute code and see results instantly</li>
+                        <li data-translate="Feature3">Syntax highlighting with Monaco Editor</li>
+                        <li data-translate="Feature4">Built-in examples to get started</li>
+                        <li data-translate="Feature5">Support for multiple C# features</li>
+                        <li data-translate="Feature6">Responsive design for mobile and desktop</li>
+                        <li><b data-translate="Feature7">Output shown at the page bottom</b></li>
                     </ul>
                 </div>
             </div>
             <div class="card mb-3 d-0" style="background-color: #a0eea0; border-color: #b8d4fe;">
                 <div class="card-header" style="background-color: #4edda7; border-color: #b8d4fe;">
-                    <h5 class="card-title mb-0">Examples</h5>
+                    <h5 class="card-title mb-0" data-translate="CardTitleExamples">Examples</h5>
                 </div>
                 <div class="card-body">
                     <ul class="mb-0">
                         <li><a class="dropdown-item" id="example1" 
                             @onclick="LoadHelloWorldExample" onmouseover="mouseHover(1)" 
-                            onmouseout="mouseLeave(1)" style="cursor: pointer;">Hello World</a></li>
+                            onmouseout="mouseLeave(1)" style="cursor: pointer;" data-translate="ExampleHelloWorld">Hello World</a></li>
                         <li><a class="dropdown-item" id="example2"
                             @onclick="LoadFibonacciExample" onmouseover="mouseHover(2)"
-                            onmouseout="mouseLeave(2)" style="cursor: pointer;">Fibonacci</a></li>
+                            onmouseout="mouseLeave(2)" style="cursor: pointer;" data-translate="ExampleFibonacci">Fibonacci</a></li>
                         <li><a class="dropdown-item" id="example3"
                             @onclick="LoadLinqExample" onmouseover="mouseHover(3)"
-                            onmouseout="mouseLeave(3)" style="cursor: pointer;">LINQ Example</a></li>
+                            onmouseout="mouseLeave(3)" style="cursor: pointer;" data-translate="ExampleLinq">LINQ Example</a></li>
                     </ul>
                 </div>
             </div>
@@ -87,13 +88,13 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Output</h5>
+                    <h5 class="card-title mb-0" data-translate="CardTitleOutput">Output</h5>
                 </div>
                 <div class="card-body">
                     <div id="output" class="output-area">
                         @if (output == null)
                         {
-                            <span class="text-muted">Output will appear here...</span>
+                            <span class="text-muted" data-translate="OutputPlaceholder">Output will appear here...</span>
                         }
                         else
                         {
