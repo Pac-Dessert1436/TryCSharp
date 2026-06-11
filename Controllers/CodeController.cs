@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis;
-using System;
+using System.Reflection;
+using System.Text;
 
 namespace TryCSharp.Controllers;
 
@@ -12,19 +13,89 @@ namespace TryCSharp.Controllers;
 [EnableCors("AllowAll")]
 public class CodeController : ControllerBase
 {
+    private const int MaxExecutionTimeMs = 5000;
+    private const int MaxOutputLength = 10000;
+
+    private static readonly HashSet<string> AllowedNamespaces =
+    [
+        "System",
+        "System.Collections.Generic",
+        "System.Linq",
+        "System.Text",
+        "System.Math"
+    ];
+
+    private static readonly HashSet<string> BlockedKeywords =
+    [
+        "unsafe",
+        "fixed",
+        "stackalloc",
+        "extern",
+        "ref",
+        "out",
+        "params",
+        "checked",
+        "unchecked"
+    ];
+
+    private static readonly HashSet<string> BlockedTypeKeywords =
+    [
+        "Process",
+        "Thread",
+        "ThreadPool",
+        "Task",
+        "Parallel",
+        "Http",
+        "Web",
+        "Network",
+        "Socket",
+        "File",
+        "Directory",
+        "Path",
+        "Stream",
+        "Assembly",
+        "Reflection",
+        "Type",
+        "Activator",
+        "AppDomain",
+        "Marshal",
+        "Unsafe",
+        "MemoryMappedFile",
+        "EventLog",
+        "Registry",
+        "Service",
+        "Management",
+        "Cryptography",
+        "Security",
+        "Principal",
+        "Environment"
+    ];
+
     [HttpPost("run")]
     public async Task<ActionResult<CodeExecutionResult>> RunCode([FromBody] CodeRequest request)
     {
         try
         {
-            var scriptOptions = ScriptOptions.Default
-                .WithImports("System", "System.Collections.Generic", "System.Linq", "System.Text", "System.IO", "System.Threading.Tasks")
-                .WithReferences(
-                    typeof(object).Assembly,
-                    typeof(Console).Assembly,
-                    typeof(List<>).Assembly,
-                    typeof(Enumerable).Assembly);
+            if (string.IsNullOrWhiteSpace(request.Code))
+            {
+                return Ok(new CodeExecutionResult
+                {
+                    Success = false,
+                    Output = "Error: Code cannot be empty"
+                });
+            }
 
+            var validationResult = ValidateCode(request.Code);
+            if (!validationResult.IsValid)
+            {
+                return Ok(new CodeExecutionResult
+                {
+                    Success = false,
+                    Output = validationResult.ErrorMessage
+                });
+            }
+
+            var scriptOptions = CreateSecureScriptOptions();
             var script = CSharpScript.Create(request.Code, scriptOptions);
             var compilation = script.GetCompilation();
             var diagnostics = compilation.GetDiagnostics();
@@ -35,7 +106,7 @@ public class CodeController : ControllerBase
                 return Ok(new CodeExecutionResult
                 {
                     Success = false,
-                    Output = "--- Compilation Error ---\n" + string.Join("\n", from e in errors select e.ToString())
+                    Output = "--- Compilation Error ---\n" + string.Join("\n", errors.Select(e => e.ToString()))
                 });
             }
 
@@ -46,12 +117,31 @@ public class CodeController : ControllerBase
 
             try
             {
-                var hasInputs = request.Inputs != null && request.Inputs.Count > 0;
-                // Use a custom input reader that can handle multiple inputs
-                Console.SetIn(new MultiInputTextReader(request.Inputs ?? throw new InputRequiredException()));
+                Console.SetIn(new MultiInputTextReader(request.Inputs ?? []));
 
-                var result = await script.RunAsync();
+                var cts = new CancellationTokenSource();
+                cts.CancelAfter(MaxExecutionTimeMs);
+
+                var resultTask = script.RunAsync(cancellationToken: cts.Token);
+                var completedTask = await Task.WhenAny(resultTask, Task.Delay(Timeout.Infinite, cts.Token));
+
+                if (completedTask != resultTask)
+                {
+                    return Ok(new CodeExecutionResult
+                    {
+                        Success = false,
+                        Output = "[!] Execution timed out. Code execution is limited to " + MaxExecutionTimeMs / 1000 + " seconds."
+                    });
+                }
+
+                var result = await resultTask;
                 var consoleText = consoleOutput.ToString();
+                
+                if (consoleText.Length > MaxOutputLength)
+                {
+                    consoleText = consoleText[..MaxOutputLength] + "\n[!] Output truncated due to length limit.";
+                }
+
                 var output = string.IsNullOrEmpty(consoleText) ? "/* Code executed successfully (no output) */" : consoleText;
 
                 return Ok(new CodeExecutionResult
@@ -72,13 +162,20 @@ public class CodeController : ControllerBase
                     InputPrompt = consoleText.TrimEnd('\n', ' ')
                 });
             }
+            catch (OperationCanceledException)
+            {
+                return Ok(new CodeExecutionResult
+                {
+                    Success = false,
+                    Output = "[!] Execution timed out."
+                });
+            }
             catch (Exception ex)
             {
                 return Ok(new CodeExecutionResult
                 {
                     Success = false,
-                    Output = $"[!] Runtime error: {ex.Message}\n{ex.StackTrace}",
-                    RequiresInput = false
+                    Output = $"[!] Runtime error: {ex.Message}"
                 });
             }
             finally
@@ -92,10 +189,91 @@ public class CodeController : ControllerBase
             return Ok(new CodeExecutionResult
             {
                 Success = false,
-                Output = $"[!] Error: {ex.Message}\n{ex.StackTrace}"
+                Output = $"[!] Error: {ex.Message}"
             });
         }
     }
+
+    private static ScriptOptions CreateSecureScriptOptions()
+    {
+        var allowedAssemblies = new List<Assembly>
+        {
+            typeof(object).Assembly,
+            typeof(string).Assembly,
+            typeof(List<>).Assembly,
+            typeof(Enumerable).Assembly,
+            typeof(StringBuilder).Assembly,
+            typeof(Convert).Assembly,
+            typeof(Math).Assembly,
+            typeof(Console).Assembly
+        };
+
+        return ScriptOptions.Default
+            .WithImports(AllowedNamespaces)
+            .WithReferences(allowedAssemblies)
+            .WithMetadataResolver(ScriptMetadataResolver.Default)
+            .WithSourceResolver(ScriptSourceResolver.Default);
+    }
+
+    private static ValidationResult ValidateCode(string code)
+    {
+        var codeLower = code.ToLower();
+
+        foreach (var keyword in BlockedKeywords)
+        {
+            if (ContainsKeyword(code, keyword))
+            {
+                return new ValidationResult(false, $"Error: Use of '{keyword}' is not allowed");
+            }
+        }
+
+        foreach (var blockedType in BlockedTypeKeywords)
+        {
+            if (codeLower.Contains(blockedType, StringComparison.CurrentCultureIgnoreCase))
+            {
+                return new ValidationResult(false, $"Error: Use of '{blockedType}' is not allowed");
+            }
+        }
+
+        if (codeLower.Contains("system.io"))
+        {
+            return new ValidationResult(false, "Error: System.IO namespace is not allowed");
+        }
+
+        if (codeLower.Contains("system.reflection"))
+        {
+            return new ValidationResult(false, "Error: System.Reflection namespace is not allowed");
+        }
+
+        if (codeLower.Contains("system.threading"))
+        {
+            return new ValidationResult(false, "Error: System.Threading namespace is not allowed");
+        }
+
+        if (codeLower.Contains("system.diagnostics"))
+        {
+            return new ValidationResult(false, "Error: System.Diagnostics namespace is not allowed");
+        }
+
+        if (codeLower.Contains("system.net"))
+        {
+            return new ValidationResult(false, "Error: System.Net namespace is not allowed");
+        }
+
+        return new ValidationResult(true, string.Empty);
+    }
+
+    private static bool ContainsKeyword(string code, string keyword)
+    {
+        string pattern = @"\b" + keyword + @"\b";
+        return System.Text.RegularExpressions.Regex.IsMatch(code, pattern);
+    }
+}
+
+public class ValidationResult(bool isValid, string errorMessage)
+{
+    public bool IsValid { get; } = isValid;
+    public string ErrorMessage { get; } = errorMessage;
 }
 
 public class CodeRequest
